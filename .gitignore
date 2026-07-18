@@ -1,0 +1,29 @@
+# Environments
+.env
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Data / models / caches (regenerate at runtime, don't ship in git)
+data/vector_index/
+data/uploads/
+data/cache/
+models/*
+!models/.gitkeep
+database/*.db
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,52 @@
+# --- Core app ---
+streamlit>=1.37.0
+python-dotenv>=1.0.1
+pydantic>=2.7.0
+
+# --- LLM / embeddings ---
+transformers>=4.42.0
+torch>=2.2.0
+sentence-transformers>=3.0.0
+accelerate>=0.31.0
+sentencepiece>=0.2.0
+einops>=0.8.0
+
+# --- Vector stores ---
+faiss-cpu>=1.8.0
+chromadb>=0.5.0
+
+# --- Translation ---
+sacremoses>=0.1.1
+
+# --- OCR ---
+pytesseract>=0.3.10
+easyocr>=1.7.1
+opencv-python-headless>=4.10.0.84
+Pillow>=10.3.0
+
+# --- Document parsing ---
+PyMuPDF>=1.24.0
+pdfplumber>=0.11.0
+python-docx>=1.1.2
+
+# --- Web retrieval ("browser" based RAG, no local corpus) ---
+requests>=2.32.0
+beautifulsoup4>=4.12.3
+duckduckgo-search>=6.1.0
+readability-lxml>=0.8.1
+lxml[html_clean]>=5.2.0
+trafilatura>=1.9.0
+
+# --- Database ---
+SQLAlchemy>=2.0.30
+
+# --- Testing ---
+pytest>=8.2.0
+pytest-mock>=3.14.0
+
+# --- Utilities ---
+numpy>=1.26.4
+pandas>=2.2.2
+tqdm>=4.66.4
+tenacity>=8.3.0
+langdetect>=1.0.9
