@@ -1,52 +1,26 @@
-# ============================================================================
-# requirements.txt  (Streamlit Community Cloud safe profile)
-#
-# Fixes applied after real deployment failures on Streamlit Cloud, which now
-# provisions Python 3.14 and installs with `uv` (not plain pip):
-#
-#  1. Removed `--extra-index-url .../whl/cpu` for torch: uv's resolver
-#     treats extra indexes very differently from pip and was picking
-#     incompatible/nonexistent versions of unrelated pinned packages
-#     (e.g. requests==2.32.3) from that index, failing resolution entirely.
-#     Trade-off: torch now installs from plain PyPI (larger download, but
-#     it actually resolves).
-#  2. Dropped `easyocr`: it drags in `torchvision` (a second large package
-#     that must match your exact torch build) on top of an already heavy
-#     stack, and was a major contributor to slow/failed installs. Tesseract
-#     (via pytesseract, a tiny pure-Python binding) is now the default and
-#     only bundled OCR engine for cloud deploys. EasyOCR still works in the
-#     code (utils/ocr.py) if you `pip install easyocr torchvision` yourself
-#     -- e.g. for a Docker/local/HF Spaces deploy with more resources.
-#  3. Dropped the `[html_clean]` extra on lxml: it was forcing a source
-#     build (no prebuilt wheel for bleeding-edge Python versions) which
-#     needs libxml2/libxslt *development* headers that plain `apt install
-#     libxml2/libxslt1` doesn't provide. trafilatura/readability-lxml don't
-#     need that extra, so it's simply removed rather than chasing dev
-#     headers for a Python version (3.14) most ML packages don't support
-#     yet anyway.
-#  4/5. IMPORTANT: torch/transformers/sentence-transformers/faiss do not
-#     yet reliably ship wheels for Python 3.14. `runtime.txt` in this repo
-#     asks for 3.11, but some Streamlit Cloud accounts only honor that via
-#     the "Python version" dropdown in the app's Advanced settings at
-#     deploy time, not the file. **You must set Python to 3.11 there** (see
-#     README "Deploying to Streamlit Community Cloud") or these packages
-#     will keep failing regardless of what's pinned below.
-# ============================================================================
-
-# --- Core app (lightweight, install first) ---
+# --- Core app ---
 streamlit==1.37.1
 python-dotenv==1.0.1
 pydantic==2.8.2
 requests==2.32.3
 beautifulsoup4==4.12.3
-lxml==5.2.2
+
+# Updated
+lxml==5.3.0
+
 readability-lxml==0.8.1
 trafilatura==1.12.1
 duckduckgo-search==6.2.6
 python-docx==1.1.2
-PyMuPDF==1.24.9
+
+# Updated
+PyMuPDF==1.26.3
+
 pdfplumber==0.11.4
-Pillow==10.4.0
+
+# Updated
+Pillow==11.3.0
+
 numpy==1.26.4
 pandas==2.2.2
 tqdm==4.66.5
@@ -55,8 +29,6 @@ langdetect==1.0.9
 SQLAlchemy==2.0.32
 
 # --- Machine learning core ---
-# Plain PyPI torch (no extra-index-url -- see note 1 above). Larger download
-# but resolves correctly under uv.
 torch==2.3.1
 transformers==4.44.0
 sentence-transformers==3.0.1
@@ -68,10 +40,10 @@ sacremoses==0.1.1
 # --- Vector store ---
 faiss-cpu==1.8.0.post1
 
-# --- OCR (Tesseract only by default -- see note 2 above for EasyOCR) ---
+# --- OCR ---
 pytesseract==0.3.10
 opencv-python-headless==4.10.0.84
 
-# --- Testing (safe to keep for CI; harmless in prod) ---
+# --- Testing ---
 pytest==8.3.2
 pytest-mock==3.14.0
