@@ -94,7 +94,12 @@ class Settings:
     DEFAULT_TGT_LANG: str = os.getenv("DEFAULT_TGT_LANG", "eng_Latn")
 
     # ---- OCR ----
-    OCR_ENGINE: str = os.getenv("OCR_ENGINE", "easyocr")  # tesseract | easyocr | both
+    # "tesseract" is the default because it's the only OCR engine bundled in
+    # requirements.txt for cloud deploys (EasyOCR pulls in torchvision on
+    # top of an already heavy torch/transformers stack). If you `pip
+    # install easyocr torchvision` yourself (e.g. Docker/local/bigger HF
+    # Space), you can switch this to "easyocr" or "both" via .env.
+    OCR_ENGINE: str = os.getenv("OCR_ENGINE", "tesseract")  # tesseract | easyocr | both
     OCR_LANGUAGES: List[str] = field(
         default_factory=lambda: _list("OCR_LANGUAGES", ["en", "hi", "sa"])
     )

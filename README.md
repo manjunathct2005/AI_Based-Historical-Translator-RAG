@@ -109,28 +109,55 @@ This repo includes the three files Streamlit Cloud looks for automatically:
 
 ### Troubleshooting a failed deploy
 
-If you see `ModuleNotFoundError` pointing at an import that looks
-unrelated to the actual missing package (e.g. it blames
-`from database.db import init_db` but the real problem is `sqlalchemy`
-never got installed), it almost always means **the requirements.txt
-install itself failed partway through** — usually on a heavy ML package
-(`torch`, `faiss-cpu`, `easyocr`) — and pip stopped before installing
-whatever was listed after it. Fix:
+Streamlit Community Cloud now provisions **Python 3.14** by default and
+installs dependencies with **`uv`** (not plain `pip`), which changes how
+some things resolve. Issues actually hit while building this project, and
+the fixes now baked into this repo:
 
-1. Open **Manage app → logs** on Streamlit Cloud and scroll up to the
-   actual `pip install` output — the real failing package/line is there,
-   above the generic error shown in the app UI.
-2. Make sure you're using the pinned `requirements.txt` from this repo
-   (not a hand-edited version with unpinned `>=` ranges), plus
-   `packages.txt` and `runtime.txt` alongside it at the repo root.
-3. Use **Reboot app** (not just refresh) after fixing dependencies, so
-   Streamlit Cloud rebuilds the environment from scratch instead of
-   reusing a half-installed cache.
-4. If it still fails on `torch`/`transformers`/`easyocr`, your account's
-   free-tier resources may simply be too small; either drop to a smaller
-   `LLM_MODEL_NAME` (already defaulted to `Qwen/Qwen2.5-0.5B-Instruct` for
-   this reason) or deploy via Docker/HF Spaces instead, where you can pick
-   a larger instance.
+1. **`packages.txt` conflict on `libglib2.0-0`** — this package name has
+   moved/renamed on newer Debian base images (multiarch "t64" transition)
+   and isn't installable as pinned. **Fix:** removed it from `packages.txt`
+   and the `Dockerfile` — `libgl1`/`libsm6`/`libxext6`/`libxrender1` cover
+   what OpenCV/Tesseract actually need.
+2. **`uv` resolution failed because of `--extra-index-url .../whl/cpu`** —
+   `uv` treats multiple package indexes very differently from `pip` and was
+   picking bad/nonexistent versions of unrelated pinned packages (like
+   `requests==2.32.3`) from the PyTorch index, failing the whole install.
+   **Fix:** removed the extra index; `torch` now installs from plain PyPI
+   (bigger download, but it actually resolves under `uv`).
+3. **`lxml[html_clean]==5.2.2` failed to build** — no prebuilt wheel exists
+   yet for bleeding-edge Python versions, so it fell back to compiling from
+   source, which needs `libxml2`/`libxslt` *development* headers (not just
+   the runtime libs). **Fix:** dropped the `[html_clean]` extra (not needed
+   by `trafilatura`/`readability-lxml` here) and added `libxml2-dev` /
+   `libxslt1-dev` to `packages.txt` as a safety net regardless.
+4. **Python 3.14 compatibility risk** — `torch`, `transformers`, and other
+   ML packages don't reliably ship wheels for Python 3.14 yet. `runtime.txt`
+   in this repo requests 3.11, but **some Streamlit Cloud accounts only
+   honor the Python version chosen in the app's "Advanced settings" dropdown
+   at deploy time, not the file.** If your app was already deployed on
+   3.14, you generally need to **delete and re-create the app** on Streamlit
+   Cloud, explicitly picking Python 3.11 in Advanced settings before the
+   first deploy (you can't change an existing app's Python version after
+   the fact).
+5. **Heavy dependency stack risk** — `torch` + `transformers` +
+   `sentence-transformers` + `faiss-cpu` is inherently a lot for a free
+   tier. **Fix:** `easyocr` (which pulls in a second matching `torchvision`
+   build on top of all that) is no longer installed by default — Tesseract
+   (via the tiny `pytesseract` binding) is the default and only bundled OCR
+   engine for cloud deploys now. EasyOCR still works in the code if you
+   install it yourself in a roomier environment (Docker/local/bigger HF
+   Space) — see the comments at the top of `requirements.txt` and the
+   `Dockerfile`, which installs it there since Docker builds have more
+   headroom.
+
+General steps after any fix:
+1. Check **Manage app → logs** for the actual failing line — the redacted
+   in-app error only shows a symptom, not the cause.
+2. Push the corrected `requirements.txt` / `packages.txt` / `runtime.txt`.
+3. Use **Reboot app**, or if the Python version itself needs to change,
+   delete and redeploy the app fresh so Advanced settings can be set before
+   the first build.
 
 ### Memory note
 

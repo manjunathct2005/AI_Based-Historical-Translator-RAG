@@ -19,7 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr-san \
     tesseract-ocr-tam \
     libgl1 \
-    libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender1 \
@@ -30,6 +29,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
+
+# Docker builds have more RAM/build time than free-tier Streamlit Cloud, so
+# EasyOCR (+ matching torchvision) is added here for full OCR coverage. Set
+# OCR_ENGINE=easyocr or "both" via .env / -e to actually use it.
+RUN pip install --no-cache-dir torchvision==0.18.1 easyocr==1.7.1
 
 COPY . .
 
