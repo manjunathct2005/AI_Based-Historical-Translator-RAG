@@ -89,6 +89,57 @@ Then open http://localhost:8501.
 3. Add any `.env` overrides as Space secrets/variables if you want to swap
    model sizes or vector backends.
 
+## Deploying to Streamlit Community Cloud
+
+This repo includes the three files Streamlit Cloud looks for automatically:
+
+- `requirements.txt` — version-pinned, lightest packages first, CPU-only
+  `torch` wheel (via `--extra-index-url`), and **no ChromaDB** (FAISS is the
+  default vector backend; Chroma pulls a very large dependency tree that
+  commonly fails to build on free-tier runners — install it yourself if you
+  want it: `pip install chromadb`).
+- `packages.txt` — system `apt` packages Tesseract/OpenCV need
+  (`tesseract-ocr` + language packs, `libgl1`, etc.). Streamlit Cloud reads
+  this automatically; **without it, OCR will fail even if Python deps
+  install fine.**
+- `runtime.txt` — pins Python 3.11 so prebuilt wheels resolve instead of
+  slow/failing source builds. (Some Streamlit Cloud accounts instead expose
+  a Python-version dropdown in the app's "Advanced settings" at deploy
+  time — set it to 3.11 there too if present.)
+
+### Troubleshooting a failed deploy
+
+If you see `ModuleNotFoundError` pointing at an import that looks
+unrelated to the actual missing package (e.g. it blames
+`from database.db import init_db` but the real problem is `sqlalchemy`
+never got installed), it almost always means **the requirements.txt
+install itself failed partway through** — usually on a heavy ML package
+(`torch`, `faiss-cpu`, `easyocr`) — and pip stopped before installing
+whatever was listed after it. Fix:
+
+1. Open **Manage app → logs** on Streamlit Cloud and scroll up to the
+   actual `pip install` output — the real failing package/line is there,
+   above the generic error shown in the app UI.
+2. Make sure you're using the pinned `requirements.txt` from this repo
+   (not a hand-edited version with unpinned `>=` ranges), plus
+   `packages.txt` and `runtime.txt` alongside it at the repo root.
+3. Use **Reboot app** (not just refresh) after fixing dependencies, so
+   Streamlit Cloud rebuilds the environment from scratch instead of
+   reusing a half-installed cache.
+4. If it still fails on `torch`/`transformers`/`easyocr`, your account's
+   free-tier resources may simply be too small; either drop to a smaller
+   `LLM_MODEL_NAME` (already defaulted to `Qwen/Qwen2.5-0.5B-Instruct` for
+   this reason) or deploy via Docker/HF Spaces instead, where you can pick
+   a larger instance.
+
+### Memory note
+
+Streamlit Community Cloud's free tier is roughly 1 CPU / ~1GB RAM. Loading
+an LLM + embedding model + EasyOCR simultaneously can be tight. This repo
+defaults to a small 0.5B LLM for that reason; bump `LLM_MODEL_NAME` in your
+`.env`/Space secrets only if you've confirmed you have more headroom (e.g.
+Docker on your own server, or a paid Streamlit/Spaces tier).
+
 ## Running tests
 
 ```bash

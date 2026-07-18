@@ -57,7 +57,12 @@ class Settings:
     # the app is runnable on CPU out of the box; swap for something bigger
     # (e.g. Qwen2.5-7B-Instruct, Mistral-7B-Instruct) if you have a GPU.
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "huggingface")
-    LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "Qwen/Qwen2.5-1.5B-Instruct")
+    # Small on purpose: Streamlit Community Cloud's free tier is ~1GB RAM /
+    # 1 CPU, and a 1.5B model in fp32 alone can need 5-6GB. If you're
+    # running locally or on a bigger box (Docker/your own server/HF Spaces
+    # with more RAM), bump this via .env, e.g. Qwen/Qwen2.5-1.5B-Instruct
+    # or Qwen/Qwen2.5-7B-Instruct.
+    LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "Qwen/Qwen2.5-0.5B-Instruct")
     LLM_MAX_NEW_TOKENS: int = int(os.getenv("LLM_MAX_NEW_TOKENS", "512"))
     LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.3"))
     LLM_DEVICE: str = os.getenv("LLM_DEVICE", "auto")  # auto | cpu | cuda

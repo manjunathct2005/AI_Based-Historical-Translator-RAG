@@ -1,52 +1,63 @@
-# --- Core app ---
-streamlit>=1.37.0
-python-dotenv>=1.0.1
-pydantic>=2.7.0
+# ============================================================================
+# requirements.txt
+#
+# IMPORTANT (Streamlit Community Cloud / limited-RAM deploys):
+# Packages are ordered lightest-first and version-pinned (not just >=) so
+# pip's resolver doesn't spend the build budget backtracking, and so a
+# failure on a heavy package (torch/faiss/easyocr) doesn't silently skip
+# installing things listed after it, like SQLAlchemy -- which is exactly
+# what causes "ModuleNotFoundError: no module named X" deep inside app
+# imports that look unrelated to the real failing package. Check the
+# Streamlit Cloud build logs (Manage app -> logs) to see which line
+# actually failed if you still hit an error after this fix.
+#
+# ChromaDB is intentionally NOT included by default: it pulls a very large
+# dependency tree (onnxruntime, duckdb, kubernetes client, etc.) that
+# frequently fails to build on free-tier cloud runners. FAISS (included
+# below) is the default vector backend and needs none of that. If you want
+# Chroma, install it yourself: pip install chromadb>=0.5.0
+# ============================================================================
 
-# --- LLM / embeddings ---
-transformers>=4.42.0
-torch>=2.2.0
-sentence-transformers>=3.0.0
-accelerate>=0.31.0
-sentencepiece>=0.2.0
-einops>=0.8.0
+# --- Core app (lightweight, install first) ---
+streamlit==1.37.1
+python-dotenv==1.0.1
+pydantic==2.8.2
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml[html_clean]==5.2.2
+readability-lxml==0.8.1
+trafilatura==1.12.1
+duckduckgo-search==6.2.6
+python-docx==1.1.2
+PyMuPDF==1.24.9
+pdfplumber==0.11.4
+Pillow==10.4.0
+numpy==1.26.4
+pandas==2.2.2
+tqdm==4.66.5
+tenacity==8.5.0
+langdetect==1.0.9
+SQLAlchemy==2.0.32
 
-# --- Vector stores ---
-faiss-cpu>=1.8.0
-chromadb>=0.5.0
+# --- Machine learning core (heavier; CPU-only torch wheel keeps install
+# small and avoids multi-GB CUDA downloads that time out on free tiers) ---
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.3.1
+transformers==4.44.0
+sentence-transformers==3.0.1
+accelerate==0.33.0
+sentencepiece==0.2.0
+einops==0.8.0
+sacremoses==0.1.1
 
-# --- Translation ---
-sacremoses>=0.1.1
+# --- Vector store ---
+faiss-cpu==1.8.0.post1
 
-# --- OCR ---
-pytesseract>=0.3.10
-easyocr>=1.7.1
-opencv-python-headless>=4.10.0.84
-Pillow>=10.3.0
+# --- OCR (shares the torch install above; no extra CUDA weight) ---
+pytesseract==0.3.10
+easyocr==1.7.1
+opencv-python-headless==4.10.0.84
 
-# --- Document parsing ---
-PyMuPDF>=1.24.0
-pdfplumber>=0.11.0
-python-docx>=1.1.2
-
-# --- Web retrieval ("browser" based RAG, no local corpus) ---
-requests>=2.32.0
-beautifulsoup4>=4.12.3
-duckduckgo-search>=6.1.0
-readability-lxml>=0.8.1
-lxml[html_clean]>=5.2.0
-trafilatura>=1.9.0
-
-# --- Database ---
-SQLAlchemy>=2.0.30
-
-# --- Testing ---
-pytest>=8.2.0
-pytest-mock>=3.14.0
-
-# --- Utilities ---
-numpy>=1.26.4
-pandas>=2.2.2
-tqdm>=4.66.4
-tenacity>=8.3.0
-langdetect>=1.0.9
+# --- Testing (safe to keep for CI; harmless in prod) ---
+pytest==8.3.2
+pytest-mock==3.14.0
